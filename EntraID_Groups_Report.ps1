@@ -110,6 +110,39 @@ $duration = Measure-Command {
         }
     }
 
+    # === FETCH NESTED GROUPS ===
+    $groupIdToNestedGroups = @{}
+
+    foreach ($groupChunk in Split-ToChunks -InputArray $groupIds) {
+        $requests = @()
+
+        foreach ($groupId in $groupChunk) {
+            $requests += @{
+                id     = "members_$groupId"
+                method = "GET"
+                url    = "/groups/$groupId/members"
+            }
+        }
+
+        try {
+            $batchBody = @{ requests = $requests }
+            $batchResponse = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/v1.0/`$batch" -Body $batchBody
+
+            foreach ($resp in $batchResponse.responses) {
+                $id = $resp.id -replace "^members_", ""
+                if ($resp.status -eq 200) {
+                    $nested = $resp.body.value | Where-Object { $_.'@odata.type' -eq "#microsoft.graph.group" }
+                    $names = $nested | ForEach-Object { $_.displayName }
+                    $groupIdToNestedGroups[$id] = ($names -join ", ")
+                } else {
+                    $groupIdToNestedGroups[$id] = ""
+                }
+            }
+        } catch {
+            Write-Warning "Batch nested group detection failed: $_"
+        }
+    }
+
     foreach ($group in $allGroups) {
         $groupId        = $group.Id
         $displayName    = $group.DisplayName
@@ -123,7 +156,11 @@ $duration = Measure-Command {
         $mailEnabled    = $group.MailEnabled
         $memberCount    = $memberCounts[$groupId]
         $ownerNames     = $ownerNamesMap[$groupId]
-
+        $nestedGroups = if ($groupIdToNestedGroups.ContainsKey($groupId)) {
+        $groupIdToNestedGroups[$groupId]
+        } else {
+            ""
+        }
         # Get all M365 groups that are Teams Teams
         $teamsGroups = Get-MgGroup -All -Filter "resourceProvisioningOptions/Any(x:x eq 'Team')" -Select "Id"
         $teamsGroupIds = $teamsGroups.Id
@@ -162,6 +199,7 @@ $duration = Measure-Command {
             "Description"                  = $description
             "Assigned Owners"              = $ownerNames
             "Total Members"                = $memberCount
+            "Nested Groups"                = $nestedGroups
             "Referenced In CA Policy Include"   = if ($caInclude) { $caInclude } else { "" }
             "Referenced In CA Policy Exclude"   = if ($caExclude) { $caExclude } else { "" }
             "Assigned Roles"               = $assignedRoles
