@@ -72,3 +72,5 @@ Teams detection is performed using resourceProvisioningOptions.
 
 Batched Graph API calls are used for performance when retrieving members and owners.
 
+## 📄 License
+MIT License
