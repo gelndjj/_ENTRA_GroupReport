@@ -124,6 +124,17 @@ $duration = Measure-Command {
         $memberCount    = $memberCounts[$groupId]
         $ownerNames     = $ownerNamesMap[$groupId]
 
+        # Get all M365 groups that are Teams Teams
+        $teamsGroups = Get-MgGroup -All -Filter "resourceProvisioningOptions/Any(x:x eq 'Team')" -Select "Id"
+        $teamsGroupIds = $teamsGroups.Id
+
+        # Then later in the loop:
+        $isTeam = if ($group.GroupTypes -contains "Unified") {
+            if ($group.Id -in $teamsGroupIds) { "Yes" } else { "No" }
+        } else {
+            "N/A"
+        }
+
         $caInclude = ($caPolicies | Where-Object { $_.Conditions.Users.IncludeGroups -contains $groupId }).DisplayName -join ", "
         $caExclude = ($caPolicies | Where-Object { $_.Conditions.Users.ExcludeGroups -contains $groupId }).DisplayName -join ", "
         $assignedRoles = if ($groupIdToRoles.ContainsKey($groupId)) {
@@ -143,6 +154,7 @@ $duration = Measure-Command {
             "Group Type"                   = $groupType
             "Group Email"                  = $groupEmail
             "Mail Enabled"                 = $mailEnabled
+            "Is Teams Team"                = $isTeam
             "Membership Type"              = $membershipType
             "Dynamic Rule"                 = $dynamicRule
             "Visibility"                   = $visibility
