@@ -14,6 +14,7 @@ This PowerShell script generates a complete CSV report of all Microsoft Entra ID
 - ✅ Lists **Conditional Access (CA) policies** referencing the group
 - ✅ Lists **Azure AD roles** assigned to the group
 - ✅ Detects **app role assignments** (Service Principal references)
+- ✅ Detects **Nested Groups**
 
 ---
 
@@ -61,7 +62,7 @@ EntraID_Groups_Report_20250618_1042.csv
 | Group Type        | Membership Type           | Referenced In CA Policy Exclude | Created On                    |
 | Group Email       | Dynamic Rule              |                                 | ResourceProvisioningOptions   |
 | Mail Enabled      |                           |                                 | Visibility                    |
-| Description       |                           |                                 |                               |
+| Description       |                           |                                 | Nested Groups                 |
 
 ---
 
