@@ -23,22 +23,27 @@ $duration = Measure-Command {
         $requests = @()
         foreach ($groupId in $groupChunk) {
             $requests += @{
-                id     = "members_$groupId"
+                id     = "count_$groupId"
                 method = "GET"
-                url    = "/groups/$groupId/members?$top=1"
+                url    = "/groups/$groupId/members/?`$count=true"
+                headers = @{ "ConsistencyLevel" = "eventual" }
             }
         }
 
         try {
             $batchBody = @{ requests = $requests }
-            $batchResponse = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/beta/`$batch" -Body $batchBody
+            $batchResponse = Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/v1.0/`$batch" -Body $batchBody
 
             foreach ($resp in $batchResponse.responses) {
-                $id = $resp.id -replace "^members_", ""
-                $memberCounts[$id] = if ($resp.status -eq 200) { $resp.body.value.Count } else { "Error" }
+                $id = $resp.id -replace "^count_", ""
+                if ($resp.status -eq 200) {
+                    $memberCounts[$id] = $resp.body.'@odata.count'
+                } else {
+                    $memberCounts[$id] = "Error"
+                }
             }
         } catch {
-            Write-Warning "Batch members failed: $_"
+            Write-Warning "Batch member count failed: $_"
         }
     }
 
