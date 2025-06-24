@@ -78,7 +78,7 @@ Write-Host "[+] Creating Graph batch requests..."
 $timerBatch = [System.Diagnostics.Stopwatch]::StartNew()
 $requests = [System.Collections.Generic.List[object]]::new()
 foreach ($group in $groups) {
-    $requests.Add(@{ id = "$($group.Id):members"; method = "GET"; url = "/groups/$($group.Id)/members`?$count=true"; headers = @{ "ConsistencyLevel" = "eventual" } })
+    $requests.Add(@{ id = "$($group.Id):members"; method = "GET"; url = "/groups/$($group.Id)/members?`$count=true"; headers = @{ "ConsistencyLevel" = "eventual" } })
     $requests.Add(@{ id = "$($group.Id):owners"; method = "GET"; url = "/groups/$($group.Id)/owners" })
     $requests.Add(@{ id = "$($group.Id):nested"; method = "GET"; url = "/groups/$($group.Id)/members" })
 }
